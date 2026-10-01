@@ -313,19 +313,172 @@ struct AnalogClock: View {
     }
 }
 
-struct PlanningView: View {
-    var body: some View {
-        VStack(spacing: 12) {
-            Text("PLANNING")
-                .font(.system(size: 42, weight: .bold))
 
-            Text("planning screen is running")
-                .foregroundColor(.secondary)
+struct PlanningView: View {
+    @State private var selectedPage = 0
+
+    var body: some View {
+        VStack(spacing: 0) {
+            TabView(selection: $selectedPage) {
+                CalendarPage()
+                    .tag(0)
+
+                AllPlansPage()
+                    .tag(1)
+            }
+            .tabViewStyle(.page(indexDisplayMode: .never))
+
+            HStack {
+                Button("CALENDAR") {
+                    selectedPage = 0
+                }
+                .frame(maxWidth: .infinity)
+
+                Button("ALL PLANS") {
+                    selectedPage = 1
+                }
+                .frame(maxWidth: .infinity)
+            }
+            .frame(height: 56)
+        }
+    }
+}
+
+
+struct CalendarPage: View {
+    @State private var currentMonth = Date()
+    @State private var selectedDate = Calendar.current.startOfDay(for: Date())
+
+    private let calendar = Calendar.current
+    private let columns = Array(
+        repeating: GridItem(.flexible()),
+        count: 7
+    )
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Text("CALENDAR")
+                .font(.largeTitle.bold())
+
+            HStack {
+                Button {
+                    changeMonth(by: -1)
+                } label: {
+                    Image(systemName: "chevron.left")
+                }
+
+                Spacer()
+
+                Text(currentMonth.formatted(
+                    .dateTime.year().month()
+                ))
+                .font(.title2.bold())
+
+                Spacer()
+
+                Button {
+                    changeMonth(by: 1)
+                } label: {
+                    Image(systemName: "chevron.right")
+                }
+            }
+
+            LazyVGrid(columns: columns, spacing: 12) {
+
+                ForEach(Array(daysInMonth().enumerated()), id: \.offset) { _, date in
+                    if let date {
+                        let isSelected = calendar.isDate(
+                            date,
+                            inSameDayAs: selectedDate
+                        )
+
+                        Button {
+                            selectedDate = date
+                        } label: {
+                            Text("\(calendar.component(.day, from: date))")
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 40)
+                                .background(
+                                    isSelected ? Color.blue : Color.clear
+                                )
+                                .foregroundStyle(
+                                    isSelected ? Color.white : Color.primary
+                                )
+                                .clipShape(Circle())
+                        }
+                        .buttonStyle(.plain)
+                    } else {
+                        Color.clear
+                            .frame(height: 40)
+                    }
+                }
+            }
+            Spacer()
+            Text("Date: \(selectedDate.formatted(.dateTime.year().month().day()))")
+            .font(.headline)
             
+
+            
+        }
+        .padding()
+    }
+
+    private func changeMonth(by amount: Int) {
+        if let newMonth = calendar.date(
+            byAdding: .month,
+            value: amount,
+            to: currentMonth
+        ) {
+            currentMonth = newMonth
+        }
+    }
+
+    private func daysInMonth() -> [Date?] {
+        guard
+            let interval = calendar.dateInterval(
+                of: .month,
+                for: currentMonth
+            ),
+            let numberOfDays = calendar.range(
+                of: .day,
+                in: .month,
+                for: currentMonth
+            )
+        else {
+            return []
+        }
+
+        let firstWeekday = calendar.component(
+            .weekday,
+            from: interval.start
+        )
+
+        let leadingEmptyDays = firstWeekday - 1
+
+        let emptySlots = Array<Date?>(
+            repeating: nil,
+            count: leadingEmptyDays
+        )
+
+        let dates = numberOfDays.compactMap { day -> Date? in
+            calendar.date(
+                byAdding: .day,
+                value: day - 1,
+                to: interval.start
+            )
+        }
+
+        return emptySlots + dates.map { Optional($0) }
+    }
+}
+
+struct AllPlansPage: View {
+    var body: some View {
+        VStack {
+            Text("ALL PLANS")
+                .font(.largeTitle.bold())
             Spacer()
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.white)
     }
 }
 
