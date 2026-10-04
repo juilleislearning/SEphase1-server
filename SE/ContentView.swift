@@ -242,10 +242,10 @@ struct MainView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.white)
         .task {
-            // reload every 30 seconds so new plans show up without restarting
+            // reload every 1 seconds so new plans show up without restarting
             while !Task.isCancelled {
                 await loadPlans()
-                try? await Task.sleep(for: .seconds(30))
+                try? await Task.sleep(for: .seconds(1))
             }
         }
     }
